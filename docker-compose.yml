@@ -1,0 +1,16 @@
+
+version: "3.8"
+
+services:
+  christmas-tree:
+    build: .
+    container_name: christmas-tree-app
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      # 请在此处填入你的 Google Gemini API Key
+      - API_KEY=YOUR_GEMINI_API_KEY_HERE

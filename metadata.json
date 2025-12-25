@@ -1,0 +1,7 @@
+{
+  "name": "Magical Gesture Christmas Tree",
+  "description": "A high-end, interactive 3D Christmas tree that opens with hand gestures to reveal floating photo memories. Built with React, Tailwind, and MediaPipe.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
