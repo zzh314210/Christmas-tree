@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import ChristmasTree from './components/ChristmasTree';
 import PhotoRing from './components/PhotoRing';
 import HandGestureOverlay from './components/HandGestureOverlay';
@@ -13,22 +12,20 @@ import { generateGreeting } from './services/geminiService';
 // 1. 在项目根目录创建文件夹: public/assets
 // 2. 将您的3张照片放入该文件夹，命名为 1.jpg, 2.jpg, 3.jpg
 //    (支持 .jpg, .png, .jpeg)
-// 3. 如果您没有放照片，页面可能会显示空白或破损图标。
 // ==========================================
 
 const DEFAULT_PHOTOS: Photo[] = [
   { 
     id: '1', 
-    // 引用 public/assets/1.jpg
-    url: '/assets/1.jpg' 
+    url: 'assets/1.jpg' 
   }, 
   { 
     id: '2', 
-    url: '/assets/2.jpg' 
+    url: 'assets/2.jpg' 
   }, 
   { 
     id: '3', 
-    url: '/assets/3.jpg' 
+    url: 'assets/3.jpg' 
   }, 
 ];
 
@@ -39,11 +36,9 @@ const App: React.FC = () => {
   const [greeting, setGreeting] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   
-  // Audio Ref
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasStartedMusic = useRef(false);
 
-  // Music Auto-play Logic
   useEffect(() => {
     const playMusic = async () => {
       if (audioRef.current && !hasStartedMusic.current) {
@@ -114,7 +109,6 @@ const App: React.FC = () => {
     });
   };
 
-  // Shared button styles
   const baseButtonClass = "flex-1 py-3 rounded-2xl font-bold transition-all shadow-lg border text-xs md:text-sm whitespace-nowrap flex items-center justify-center gap-2 backdrop-blur-md";
 
   return (
@@ -123,37 +117,27 @@ const App: React.FC = () => {
         onClick={handleUserInteraction}
         onTouchStart={handleUserInteraction}
     >
-      {/* Audio */}
       <audio 
         ref={audioRef} 
         loop 
         src="https://actions.google.com/sounds/v1/holidays/silent_night_piano.ogg" 
       />
       
-      {/* --- BACKGROUND LAYERS --- */}
-      
-      {/* LAYER 1: Deep Space Gradient (Base Color) */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_80%,_#1a2035_0%,_#000000_100%)] z-0" />
 
-      {/* LAYER 2: Nebulas (Atmosphere) */}
-      {/* These will be visible when StarField is in 'idle' mode (transparent) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-900/20 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-emerald-900/20 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }} />
       </div>
 
-      {/* LAYER 3: Star Field (Dynamic Particles) */}
-      {/* Transparent canvas overlay that handles moving stars */}
       <StarField isWarping={isOpen} />
 
-      {/* UI Header */}
       <div className="absolute top-4 text-center z-50 pointer-events-none mix-blend-screen opacity-80">
         <h1 className="text-3xl md:text-5xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-200 to-yellow-600 mb-1 drop-shadow-[0_0_25px_rgba(255,215,0,0.5)]">
           Magical Holiday
         </h1>
       </div>
 
-      {/* MAIN CONTENT */}
       <div className="relative w-full h-full flex items-center justify-center z-20">
         <div className={`w-full h-full flex items-center justify-center transition-all duration-1000 transform ${isOpen ? 'scale-125 opacity-60 blur-sm' : 'scale-100 opacity-100'}`}>
            <ChristmasTree isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)} />
@@ -164,7 +148,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Greeting Card */}
       {isOpen && greeting && (
         <div className="absolute bottom-24 right-4 md:bottom-32 md:right-10 z-50 animate-fade-in-up max-w-[60vw] md:max-w-xs">
           <div className="bg-black/60 backdrop-blur-md border border-yellow-500/30 p-4 rounded-xl shadow-[0_0_30px_rgba(255,215,0,0.15)] flex items-center justify-center">
@@ -175,7 +158,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Controls */}
       <div 
         className="absolute bottom-8 left-0 w-full flex items-center justify-center px-4 z-50" 
         onClick={(e) => e.stopPropagation()}
