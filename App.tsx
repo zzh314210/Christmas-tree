@@ -6,22 +6,19 @@ import StarField from './components/StarField';
 import { Photo, GestureType } from './types';
 import { generateGreeting } from './services/geminiService';
 
-// Vite 自动处理的基础路径 (/christmas/)
-// Fix: Use type casting to avoid TypeScript error on import.meta.env when types are not correctly loaded
-const BASE_URL = (import.meta as any).env?.BASE_URL || '/christmas/';
-
+// 使用纯相对路径，浏览器会基于当前的 /christmas/ 路径自动解析为 /christmas/assets/1.jpg
 const DEFAULT_PHOTOS: Photo[] = [
   { 
     id: '1', 
-    url: `${BASE_URL}assets/1.jpg`.replace(/\/+/g, '/') // 确保路径没有双斜杠
+    url: 'assets/1.jpg'
   }, 
   { 
     id: '2', 
-    url: `${BASE_URL}assets/2.jpg`.replace(/\/+/g, '/')
+    url: 'assets/2.jpg'
   }, 
   { 
     id: '3', 
-    url: `${BASE_URL}assets/3.jpg`.replace(/\/+/g, '/')
+    url: 'assets/3.jpg'
   }, 
 ];
 

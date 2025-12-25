@@ -31,7 +31,7 @@ const PhotoRing: React.FC<PhotoRingProps> = ({ photos, isVisible }) => {
               className="absolute w-32 h-44 md:w-56 md:h-72 bg-black/40 p-1 rounded-xl border border-yellow-500/50 shadow-[0_0_25px_rgba(255,215,0,0.15)] overflow-hidden backdrop-blur-sm transition-all duration-1000 hover:scale-110 pointer-events-auto hover:border-yellow-400 hover:shadow-[0_0_35px_rgba(255,215,0,0.4)]"
               style={{
                 transform: `rotateY(${angle}deg) translateZ(${radius}px)`,
-                backfaceVisibility: 'hidden', // 隐藏背面，解决镜像反转问题
+                // Removed backfaceVisibility: 'hidden' to prevent cards from disappearing when rotating away
               }}
             >
               <div className="w-full h-full relative">
@@ -41,7 +41,6 @@ const PhotoRing: React.FC<PhotoRingProps> = ({ photos, isVisible }) => {
                     className="w-full h-full object-cover rounded-lg"
                     onError={(e) => {
                         console.error("Image load failed:", photo.url);
-                        // 如果加载失败，可以尝试打印当前路径
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center p-2 md:p-3">
