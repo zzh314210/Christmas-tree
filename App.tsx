@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ChristmasTree from './components/ChristmasTree';
 import PhotoRing from './components/PhotoRing';
@@ -6,26 +7,21 @@ import StarField from './components/StarField';
 import { Photo, GestureType } from './types';
 import { generateGreeting } from './services/geminiService';
 
-// ==========================================
-// 📸 图片设置指南 (PHOTO SETUP)
-// ==========================================
-// 1. 在项目根目录创建文件夹: public/assets
-// 2. 将您的3张照片放入该文件夹，命名为 1.jpg, 2.jpg, 3.jpg
-//    (支持 .jpg, .png, .jpeg)
-// ==========================================
+// Fix: Cast import.meta to any to resolve property 'env' access error in some environments
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
 
 const DEFAULT_PHOTOS: Photo[] = [
   { 
     id: '1', 
-    url: 'assets/1.jpg' 
+    url: `${BASE_URL}assets/1.jpg` 
   }, 
   { 
     id: '2', 
-    url: 'assets/2.jpg' 
+    url: `${BASE_URL}assets/2.jpg` 
   }, 
   { 
     id: '3', 
-    url: 'assets/3.jpg' 
+    url: `${BASE_URL}assets/3.jpg` 
   }, 
 ];
 
