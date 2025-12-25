@@ -2,16 +2,18 @@ version: "3.8"
 
 services:
   christmas-tree:
-    build: .
+    build:
+      context: .
+      # 关键修改：将 API_KEY 作为构建参数传入，
+      # 这样 Vite build 时才能把 Key 写入静态 JS 文件中。
+      args:
+        - API_KEY=${API_KEY}
     container_name: christmas-tree-app
     restart: always
     ports:
       - "8000:8000"
-    # 注意：我删除了 source code volume (- ./:/app)，
-    # 因为我们在 Dockerfile 里已经 build 了。
-    # 如果挂载本地目录，会把容器里 build 好的 dist 文件夹覆盖掉。
     volumes:
       - /app/node_modules
+    # 运行时环境变量（可选，Vite 静态站主要靠 build args）
     environment:
-      # 请确保替换为你真实的 API KEY，否则祝福语功能无法使用
       - API_KEY=${API_KEY}
