@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ChristmasTree from './components/ChristmasTree';
 import PhotoRing from './components/PhotoRing';
@@ -7,21 +6,22 @@ import StarField from './components/StarField';
 import { Photo, GestureType } from './types';
 import { generateGreeting } from './services/geminiService';
 
-// Fix: Cast import.meta to any to resolve property 'env' access error in some environments
-const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
+// Vite 自动处理的基础路径 (/christmas/)
+// Fix: Use type casting to avoid TypeScript error on import.meta.env when types are not correctly loaded
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/christmas/';
 
 const DEFAULT_PHOTOS: Photo[] = [
   { 
     id: '1', 
-    url: `${BASE_URL}assets/1.jpg` 
+    url: `${BASE_URL}assets/1.jpg`.replace(/\/+/g, '/') // 确保路径没有双斜杠
   }, 
   { 
     id: '2', 
-    url: `${BASE_URL}assets/2.jpg` 
+    url: `${BASE_URL}assets/2.jpg`.replace(/\/+/g, '/')
   }, 
   { 
     id: '3', 
-    url: `${BASE_URL}assets/3.jpg` 
+    url: `${BASE_URL}assets/3.jpg`.replace(/\/+/g, '/')
   }, 
 ];
 

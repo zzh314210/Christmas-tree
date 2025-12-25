@@ -8,12 +8,17 @@ export default defineConfig(({ mode }) => {
     base: '/christmas/',
     plugins: [react()],
     server: {
-      host: '0.0.0.0', // Crucial for Docker
+      host: '0.0.0.0',
       port: 3000,
     },
+    preview: {
+      host: '0.0.0.0',
+      port: 8000,
+    },
     define: {
-      // Shim process.env for the application code
-      'process.env': process.env
+      // 仅注入必要的环境变量，避免序列化整个 process.env 导致构建崩溃
+      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY),
+      'process.env': '{}' // 提供一个空的兜底，防止代码中引用 process.env 报错
     }
   };
 });
