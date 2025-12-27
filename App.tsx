@@ -1,5 +1,4 @@
 
-// Add React import to resolve namespace errors for React.FC and React.ChangeEvent
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ChristmasTree from './components/ChristmasTree';
 import PhotoRing from './components/PhotoRing';
@@ -8,15 +7,16 @@ import StarField from './components/StarField';
 import { Photo, GestureType } from './types';
 import { generateGreeting } from './services/geminiService';
 
-// Updated paths to work with base URL '/christmas/'
-// Files should be in public/assets/
+// CHANGED: Use relative paths for assets. 
+// This ensures that whether the app is served at localhost:3000/ or localhost:3000/christmas/,
+// the browser resolves 'assets/x.jpg' relative to the current page, which is safer.
 const DEFAULT_PHOTOS: Photo[] = [
-  { id: '1', url: '/christmas/assets/1.jpg' }, 
-  { id: '2', url: '/christmas/assets/2.jpg' }, 
-  { id: '3', url: '/christmas/assets/3.jpg' }, 
-  { id: '4', url: '/christmas/assets/4.jpg' }, 
-  { id: '5', url: '/christmas/assets/5.jpg' }, 
-  { id: '6', url: '/christmas/assets/6.jpg' }, 
+  { id: '1', url: 'assets/1.jpg' }, 
+  { id: '2', url: 'assets/2.jpg' }, 
+  { id: '3', url: 'assets/3.jpg' }, 
+  { id: '4', url: 'assets/4.jpg' }, 
+  { id: '5', url: 'assets/5.jpg' }, 
+  { id: '6', url: 'assets/6.jpg' }, 
 ];
 
 const App: React.FC = () => {
