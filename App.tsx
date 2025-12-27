@@ -8,8 +8,6 @@ import { Photo, GestureType } from './types';
 import { generateGreeting } from './services/geminiService';
 
 // CHANGED: Use relative paths for assets. 
-// This ensures that whether the app is served at localhost:3000/ or localhost:3000/christmas/,
-// the browser resolves 'assets/x.jpg' relative to the current page, which is safer.
 const DEFAULT_PHOTOS: Photo[] = [
   { id: '1', url: 'assets/1.jpg' }, 
   { id: '2', url: 'assets/2.jpg' }, 
@@ -29,26 +27,48 @@ const App: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasStartedMusic = useRef(false);
 
-  useEffect(() => {
-    const playMusic = async () => {
-      if (audioRef.current && !hasStartedMusic.current) {
-        try {
-          await audioRef.current.play();
-          hasStartedMusic.current = true;
-        } catch (err) {
-          console.log("Auto-play blocked, waiting for interaction");
-        }
+  // Helper to play music on any interaction
+  const tryPlayMusic = useCallback(async () => {
+    if (audioRef.current && !hasStartedMusic.current) {
+      try {
+        await audioRef.current.play();
+        hasStartedMusic.current = true;
+      } catch (err) {
+        // Autoplay policy might block this until user interacts
+        console.log("Waiting for user interaction to play music");
       }
-    };
-    playMusic();
+    }
   }, []);
 
+  // 1. Try to play immediately on mount
+  useEffect(() => {
+    tryPlayMusic();
+
+    // 2. Add global listeners to catch the very first interaction anywhere on screen
+    const unlockAudio = () => {
+        tryPlayMusic();
+        // Once played, we can remove these specific global listeners
+        if (hasStartedMusic.current) {
+            window.removeEventListener('click', unlockAudio);
+            window.removeEventListener('touchstart', unlockAudio);
+            window.removeEventListener('keydown', unlockAudio);
+        }
+    };
+
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+
+    return () => {
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+    };
+  }, [tryPlayMusic]);
+
+  // Handle direct interaction with the main container
   const handleUserInteraction = () => {
-    if (audioRef.current && !hasStartedMusic.current) {
-      audioRef.current.play().then(() => {
-        hasStartedMusic.current = true;
-      }).catch(e => console.error("Play failed", e));
-    }
+    tryPlayMusic();
   };
 
   useEffect(() => {
@@ -60,27 +80,25 @@ const App: React.FC = () => {
   }, [isOpen, greeting]);
 
   const handleGesture = useCallback((gesture: GestureType) => {
-    if (audioRef.current && !hasStartedMusic.current) {
-        audioRef.current.play().then(() => hasStartedMusic.current = true).catch(() => {});
-    }
+    tryPlayMusic(); // Try to play music if gesture triggers (might be blocked, but worth a try)
 
     setIsOpen((prevIsOpen) => {
       if (gesture === 'OPEN' && !prevIsOpen) return true;
       if (gesture === 'CLOSE' && prevIsOpen) return false;
       return prevIsOpen;
     });
-  }, []);
+  }, [tryPlayMusic]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
-    
+    tryPlayMusic(); // Uploading is an interaction, play music
+
     const processFiles = async () => {
         try {
             const newPhotos: Photo[] = [];
-            // 允许用户上传最多 6 张
             const filesArray = Array.from(files).slice(0, 6) as File[];
             
             const promises = filesArray.map((file, index) => {
@@ -103,7 +121,6 @@ const App: React.FC = () => {
             
             if (newPhotos.length > 0) {
                  setPhotos(prev => {
-                    // 组合新上传的和默认的照片，始终保持 6 张
                     const combined = [...newPhotos, ...DEFAULT_PHOTOS];
                     return combined.slice(0, 6);
                  });
@@ -127,11 +144,10 @@ const App: React.FC = () => {
         onClick={handleUserInteraction}
         onTouchStart={handleUserInteraction}
     >
-      <audio 
-        ref={audioRef} 
-        loop 
-        src="https://actions.google.com/sounds/v1/holidays/silent_night_piano.ogg" 
-      />
+      <audio ref={audioRef} loop crossOrigin="anonymous" preload="auto">
+        <source src="https://archive.org/download/SilentNight_603/SilentNight.mp3" type="audio/mpeg" />
+        <source src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Silent_Night_by_Kevin_MacLeod.ogg" type="audio/ogg" />
+      </audio>
       
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_80%,_#1a2035_0%,_#000000_100%)] z-0" />
 
@@ -145,7 +161,10 @@ const App: React.FC = () => {
 
       <div className="relative w-full h-full flex items-center justify-center z-20">
         <div className={`w-full h-full flex items-center justify-center transition-all duration-1000 transform ${isOpen ? 'scale-125 opacity-60 blur-sm' : 'scale-100 opacity-100'}`}>
-           <ChristmasTree isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)} />
+           <ChristmasTree isOpen={isOpen} onToggle={() => {
+               tryPlayMusic();
+               setIsOpen(!isOpen);
+           }} />
         </div>
         
         <div className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${isOpen ? 'opacity-100 scale-100 delay-300' : 'opacity-0 scale-50 pointer-events-none'}`}>
@@ -163,22 +182,38 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="absolute bottom-8 left-0 w-full flex items-center justify-center px-4 z-50" onClick={(e) => e.stopPropagation()}>
+      {/* Control Bar - Restored to original layout without Music Button */}
+      <div className="absolute bottom-8 left-0 w-full flex items-center justify-center px-4 z-50">
         <div className="flex w-full max-w-md gap-3">
+          
           <button
-            onClick={() => setGestureActive(!gestureActive)}
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                tryPlayMusic(); 
+                setGestureActive(!gestureActive); 
+            }}
             className={`${baseButtonClass} ${gestureActive ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400' : 'bg-white/5 text-emerald-200/80 border-white/10'}`}
           >
             <span>{gestureActive ? '✋ On' : '🖐️ Gesture'}</span>
           </button>
 
-          <label className={`${baseButtonClass} cursor-pointer bg-white/5 text-blue-200/80 border-white/10 hover:border-blue-400/30`}>
+          <label 
+            className={`${baseButtonClass} cursor-pointer bg-white/5 text-blue-200/80 border-white/10 hover:border-blue-400/30`}
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                tryPlayMusic();
+            }}
+          >
             <span>🖼️ Photos</span>
             <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
           </label>
 
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                tryPlayMusic(); 
+                setIsOpen(!isOpen); 
+            }}
             className={`${baseButtonClass} ${isOpen ? 'bg-red-500/20 text-red-100 border-red-400' : 'bg-white/5 text-red-200/80 border-white/10'}`}
           >
             <span>✨ {isOpen ? 'Reset' : 'Magic'}</span>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Photo } from '../types';
 
@@ -11,6 +10,11 @@ interface PhotoRingProps {
 const PhotoCard: React.FC<{ photo: Photo; index: number; radius: number; total: number }> = ({ photo, index, radius, total }) => {
   const [hasError, setHasError] = useState(false);
   const angle = (360 / total) * index;
+
+  // 当 photo 属性变化时，重置错误状态
+  useEffect(() => {
+    setHasError(false);
+  }, [photo.url]);
 
   return (
     <div
@@ -28,14 +32,14 @@ const PhotoCard: React.FC<{ photo: Photo; index: number; radius: number; total: 
                 onError={() => setHasError(true)}
             />
         ) : (
-            // 图片加载失败时的优雅降级 UI
+            // 图片加载失败时的优雅降级 UI (Gift Box)
             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-800 to-black rounded-lg border border-white/5">
                 <span className="text-3xl md:text-5xl mb-2 opacity-80 drop-shadow-lg">🎁</span>
                 <span className="text-[10px] md:text-xs text-yellow-200/50 font-serif tracking-widest uppercase">Secret</span>
             </div>
         )}
         
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex items-end justify-center p-2 md:p-3">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex items-end justify-center p-2 md:p-3 pointer-events-none">
             <span className="text-yellow-100 text-[10px] md:text-sm font-serif italic tracking-wider opacity-90">
                 {hasError ? `Gift ${index + 1}` : `Memory ${index + 1}`}
             </span>
