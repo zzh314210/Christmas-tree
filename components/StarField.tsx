@@ -21,7 +21,8 @@ const StarField: React.FC<StarFieldProps> = ({ isWarping }) => {
   const speedRef = useRef<number>(0.2); // Current speed for smooth transition
   
   // Configuration
-  const STAR_COUNT = 400; 
+  // Increased count to fill the void after warp
+  const STAR_COUNT = 800; 
   const SPEED_IDLE = 0.1;
   const SPEED_WARP = 15.0; // Faster warp
   
@@ -83,7 +84,10 @@ const StarField: React.FC<StarFieldProps> = ({ isWarping }) => {
         const sy = (star.y / star.z) * cy + cy;
 
         // Calculate size based on depth
-        const depthRatio = 1 - star.z / canvas.width;
+        // Modified depth logic: Distant stars are still slightly visible
+        const normalizedDepth = star.z / canvas.width; // 0 (close) to 1 (far)
+        const depthRatio = 1 - normalizedDepth; 
+        
         const size = depthRatio * (isFast ? 2.0 : 2.5);
         
         // Draw
@@ -107,7 +111,10 @@ const StarField: React.FC<StarFieldProps> = ({ isWarping }) => {
             const time = Date.now() * 0.002;
             const blink = Math.sin(time + star.blinkOffset) * 0.3 + 0.7; // 0.4 to 1.0
             
-            ctx.fillStyle = `rgba(255, 255, 230, ${depthRatio * star.opacity * blink})`;
+            // FIX: Ensure minimum opacity (0.2) so distant stars don't vanish completely
+            const baseAlpha = 0.2 + (depthRatio * 0.8);
+            
+            ctx.fillStyle = `rgba(255, 255, 230, ${baseAlpha * star.opacity * blink})`;
             ctx.arc(sx, sy, size * 0.8, 0, Math.PI * 2);
             ctx.fill();
         }

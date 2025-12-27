@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -31,6 +32,24 @@
         .animate-rotate-ring {
             animation: rotate-ring 15s linear infinite;
         }
+        
+        /* --- NEW SUBTLE ANIMATIONS --- */
+        /* Gentle twinkle for the distant edge lights */
+        @keyframes light-twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+        
+        /* Slow sway for the "hanging" feel */
+        @keyframes light-sway {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(5px); }
+        }
+
+        .animate-light-twinkle {
+            animation: light-twinkle 4s ease-in-out infinite;
+        }
+
         ::-webkit-scrollbar {
             display: none;
         }

@@ -17,6 +17,16 @@ const DEFAULT_PHOTOS: Photo[] = [
   { id: '6', url: 'assets/6.jpg' }, 
 ];
 
+// 三级音源保障：全部使用 Pixabay 源，国内访问更稳定
+const PLAYLIST = [
+    // 1. We Wish You a Merry Christmas (Piano/Classic) - 旋律清晰，无长前奏
+    "https://cdn.pixabay.com/audio/2022/11/22/audio_febc508520.mp3",
+    // 2. Jingle Bells (Upbeat) - 欢快版
+    "https://cdn.pixabay.com/audio/2022/10/26/audio_82eb612140.mp3",
+    // 3. Silent Night (Relaxing) - 舒缓版兜底
+    "https://cdn.pixabay.com/audio/2022/12/01/audio_1d42eb2dc8.mp3"
+];
+
 const App: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>(DEFAULT_PHOTOS);
@@ -24,35 +34,55 @@ const App: React.FC = () => {
   const [greeting, setGreeting] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   
+  // Audio State
+  const [currentSourceIndex, setCurrentSourceIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasStartedMusic = useRef(false);
 
-  // Helper to play music on any interaction
+  // 播放音乐的核心逻辑
   const tryPlayMusic = useCallback(async () => {
     if (audioRef.current && !hasStartedMusic.current) {
       try {
+        audioRef.current.volume = 0.5;
+        // 尝试播放
         await audioRef.current.play();
         hasStartedMusic.current = true;
+        console.log("Music started successfully with source:", currentSourceIndex);
       } catch (err) {
-        // Autoplay policy might block this until user interacts
-        console.log("Waiting for user interaction to play music");
+        console.warn("Autoplay blocked or failed, waiting for user interaction.", err);
       }
+    } else if (audioRef.current && audioRef.current.paused && hasStartedMusic.current) {
+        // 如果已经初始化过但暂停了（比如切后台），恢复播放
+        audioRef.current.play().catch(e => console.warn("Resume failed", e));
     }
-  }, []);
+  }, [currentSourceIndex]);
 
-  // 1. Try to play immediately on mount
+  // 自动切换下一个音源
+  const handleAudioError = () => {
+    console.warn(`Source ${currentSourceIndex} failed. Switching to next source.`);
+    if (currentSourceIndex < PLAYLIST.length - 1) {
+        setCurrentSourceIndex(prev => prev + 1);
+        // 重置状态以便新源加载后尝试播放
+        hasStartedMusic.current = false;
+        // 给一点时间让状态更新
+        setTimeout(() => {
+            if(audioRef.current) {
+                audioRef.current.load();
+                tryPlayMusic();
+            }
+        }, 100);
+    } else {
+        console.error("All audio sources failed.");
+    }
+  };
+
+  // 1. 初始化尝试播放
   useEffect(() => {
     tryPlayMusic();
 
-    // 2. Add global listeners to catch the very first interaction anywhere on screen
+    // 2. 全局交互监听：点击任何地方都触发播放
     const unlockAudio = () => {
         tryPlayMusic();
-        // Once played, we can remove these specific global listeners
-        if (hasStartedMusic.current) {
-            window.removeEventListener('click', unlockAudio);
-            window.removeEventListener('touchstart', unlockAudio);
-            window.removeEventListener('keydown', unlockAudio);
-        }
     };
 
     window.addEventListener('click', unlockAudio);
@@ -66,11 +96,6 @@ const App: React.FC = () => {
     };
   }, [tryPlayMusic]);
 
-  // Handle direct interaction with the main container
-  const handleUserInteraction = () => {
-    tryPlayMusic();
-  };
-
   useEffect(() => {
     if (isOpen && !greeting) {
       generateGreeting().then(setGreeting);
@@ -80,7 +105,7 @@ const App: React.FC = () => {
   }, [isOpen, greeting]);
 
   const handleGesture = useCallback((gesture: GestureType) => {
-    tryPlayMusic(); // Try to play music if gesture triggers (might be blocked, but worth a try)
+    tryPlayMusic(); 
 
     setIsOpen((prevIsOpen) => {
       if (gesture === 'OPEN' && !prevIsOpen) return true;
@@ -94,7 +119,7 @@ const App: React.FC = () => {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
-    tryPlayMusic(); // Uploading is an interaction, play music
+    tryPlayMusic(); 
 
     const processFiles = async () => {
         try {
@@ -141,19 +166,29 @@ const App: React.FC = () => {
   return (
     <div 
         className="relative w-screen h-screen bg-black overflow-hidden flex flex-col items-center justify-center font-sans text-white"
-        onClick={handleUserInteraction}
-        onTouchStart={handleUserInteraction}
+        onClick={() => tryPlayMusic()}
+        onTouchStart={() => tryPlayMusic()}
     >
-      <audio ref={audioRef} loop crossOrigin="anonymous" preload="auto">
-        <source src="https://archive.org/download/SilentNight_603/SilentNight.mp3" type="audio/mpeg" />
-        <source src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Silent_Night_by_Kevin_MacLeod.ogg" type="audio/ogg" />
-      </audio>
+      <audio 
+        ref={audioRef} 
+        src={PLAYLIST[currentSourceIndex]}
+        loop 
+        playsInline 
+        preload="auto"
+        onError={handleAudioError}
+      />
       
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_80%,_#1a2035_0%,_#000000_100%)] z-0" />
+      {/* --- BACKGROUND SYSTEM: Pure Black & StarField --- */}
+      
+      {/* 1. Base Layer: Absolute Black */}
+      <div className="absolute inset-0 bg-black z-0" />
 
+      {/* 2. StarField (Enhanced Depth) */}
       <StarField isWarping={isOpen} />
 
-      <div className="absolute top-4 text-center z-50 pointer-events-none mix-blend-screen opacity-80">
+      {/* --- END BACKGROUND SYSTEM --- */}
+
+      <div className="absolute top-4 text-center z-50 pointer-events-none mix-blend-screen opacity-90">
         <h1 className="text-3xl md:text-5xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-200 to-yellow-600 mb-1 drop-shadow-[0_0_25px_rgba(255,215,0,0.5)]">
           Merry Christmas
         </h1>
@@ -182,7 +217,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Control Bar - Restored to original layout without Music Button */}
+      {/* Control Bar */}
       <div className="absolute bottom-8 left-0 w-full flex items-center justify-center px-4 z-50">
         <div className="flex w-full max-w-md gap-3">
           
