@@ -10,9 +10,9 @@ export const generateGreeting = async () => {
       contents: "Generate a short, magical, one-sentence Christmas blessing in Chinese. Something about love, light, and memories.",
     });
     // The response.text property (not a method) directly returns the extracted string output.
-    return response.text || "圣诞快乐，愿你的世界充满温暖与奇迹。";
+    return response.text || "Merry Christmas! May your days be filled with magic. 圣诞快乐，愿温暖与奇迹与你同在。";
   } catch (error) {
     console.error("Gemini Greeting Error:", error);
-    return "圣诞快乐，温暖常伴！";
+    return "Merry Christmas! May love and light fill your heart. 圣诞快乐，愿爱与光亮充满你的心房。";
   }
 };

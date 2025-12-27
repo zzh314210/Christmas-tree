@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { GestureType } from '../types';
 
@@ -17,6 +16,19 @@ const HandGestureOverlay: React.FC<HandGestureOverlayProps> = ({ onGesture, isAc
 
   useEffect(() => {
     if (!isActive) return;
+
+    // Security Check: Detect if browser blocks camera due to HTTP
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isHttps = window.location.protocol === 'https:';
+      
+      if (!isLocal && !isHttps) {
+        alert("⚠️ 无法启动摄像头\n\n浏览器的安全策略禁止在非 HTTPS 环境下访问摄像头。\n\n请尝试：\n1. 配置 SSL 证书使用 HTTPS 访问\n2. 或在本地使用 localhost 访问");
+      } else {
+        alert("⚠️ 您的浏览器不支持或已禁用摄像头访问权限。");
+      }
+      return;
+    }
 
     let hands: any = null;
     let camera: any = null;
@@ -95,7 +107,7 @@ const HandGestureOverlay: React.FC<HandGestureOverlayProps> = ({ onGesture, isAc
         camera.start();
       }
     } catch (e) {
-      console.error(e);
+      console.error("MediaPipe Init Error:", e);
     }
 
     return () => {

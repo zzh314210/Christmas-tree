@@ -19,6 +19,7 @@ interface Particle {
   sparkleSpeed: number;
   sparklePhase: number;
   orbitSpeed: number;
+  type: 'tree' | 'ribbon' | 'star' | 'ornament';
 }
 
 const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
@@ -43,24 +44,36 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
     canvas.height = 2000;
 
     if (particlesRef.current.length === 0) {
-      const colors = ['#FFD700', '#FFFFFF', '#50C878', '#FF4500', '#00FFFF', '#FF00FF', '#FFFACD']; 
+      // Color Palettes
+      // CHANGED: Removed dark/muddy greens. Added brighter, vivid greens to pop against black.
+      const treeGreens = ['#006400', '#008000', '#228B22', '#32CD32', '#00FF00', '#3CB371', '#2E8B57', '#7CFC00'];
+      const ornamentColors = ['#FF0000', '#FFD700', '#00FFFF', '#FF00FF', '#FFFFFF', '#FF4500', '#FF69B4'];
       
-      // --- PART 1: The Main Tree ---
-      const treeParticleCount = 4000; 
+      const treeHeight = 1700;
+      const yBase = 900; // Positive Y is bottom of screen in Canvas
+
+      // --- PART 1: The High-Density Tree Body ---
+      const treeParticleCount = 15000; 
 
       for (let i = 0; i < treeParticleCount; i++) {
-        const height = 1600; 
-        const yOffset = -900; 
-        const y = (Math.random()) * height + yOffset; 
+        // Generate Y from Base (bottom) to Top
+        const y = yBase - Math.random() * treeHeight; 
         
-        const progress = (y - yOffset) / height;
-        const maxRadius = 750 * progress; 
+        // Progress: 0 at Base, 1 at Top
+        const progress = (yBase - y) / treeHeight;
         
+        // Cone shape
+        const maxRadius = 800 * (1 - progress); 
+
         const angle = Math.random() * Math.PI * 2;
-        const r = maxRadius * Math.pow(Math.random(), 0.4); 
+        // Distribution: slightly more uniform to fill gaps
+        const r = maxRadius * Math.sqrt(Math.random()); 
         
         const x = Math.cos(angle) * r;
         const z = Math.sin(angle) * r;
+
+        // CHANGED: Reduced ornament frequency from 12% to 10% to let the green dominate
+        const isOrnament = Math.random() > 0.90; 
 
         particlesRef.current.push({
           x: x,
@@ -69,26 +82,77 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
           baseX: x,
           baseY: y,
           baseZ: z,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          size: Math.random() * 3 + 1,
+          color: isOrnament 
+            ? ornamentColors[Math.floor(Math.random() * ornamentColors.length)] 
+            : treeGreens[Math.floor(Math.random() * treeGreens.length)],
+          size: isOrnament ? Math.random() * 5 + 3 : Math.random() * 2 + 1,
           randomOffset: Math.random() * 100,
-          sparkleSpeed: 0.01 + Math.random() * 0.08,
+          sparkleSpeed: isOrnament ? 0.05 + Math.random() * 0.05 : 0.005,
           sparklePhase: Math.random() * Math.PI * 2,
-          orbitSpeed: (Math.random() - 0.5) * 0.02
+          orbitSpeed: 0,
+          type: isOrnament ? 'ornament' : 'tree'
+        });
+      }
+
+      // --- PART 2: The "Furry" Volumetric Golden Ribbon ---
+      const ribbonParticleCount = 10000;
+      const spirals = 8; // More twists
+      
+      for (let i = 0; i < ribbonParticleCount; i++) {
+        const p = i / ribbonParticleCount; // 0 (start) to 1 (end)
+        
+        // Spiral center path
+        const yCenter = yBase - p * treeHeight;
+        const radiusCenter = 850 * (1 - p) + 30; // Float outside the tree
+        const angleBase = p * Math.PI * 2 * spirals;
+
+        // Volumetric Scattering (The "Furry" Effect)
+        // Instead of a single point, we scatter particles around the center point of the ribbon
+        const ribbonThickness = 35; // The width/fuzziness of the band
+        
+        // Random offset in a sphere/cloud around the ribbon center
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const rOffset = Math.pow(Math.random(), 1/3) * ribbonThickness;
+
+        const offsetX = rOffset * Math.sin(phi) * Math.cos(theta);
+        const offsetY = rOffset * Math.sin(phi) * Math.sin(theta);
+        const offsetZ = rOffset * Math.cos(phi);
+
+        const x = Math.cos(angleBase) * radiusCenter + offsetX;
+        const y = yCenter + offsetY; // Add vertical volume
+        const z = Math.sin(angleBase) * radiusCenter + offsetZ;
+
+        // Mix of gold shades for texture
+        const goldColors = ['#FFD700', '#FDB931', '#FFFFE0', '#DAA520'];
+        const color = goldColors[Math.floor(Math.random() * goldColors.length)];
+
+        particlesRef.current.push({
+          x: x,
+          y: y,
+          z: z,
+          baseX: x,
+          baseY: y,
+          baseZ: z,
+          color: color,
+          size: Math.random() * 2.5 + 1, // Smaller, denser particles for the "fur" look
+          randomOffset: Math.random() * 100,
+          sparkleSpeed: 0.1 + Math.random() * 0.1, // Fast sparkle
+          sparklePhase: Math.random() * Math.PI * 2,
+          orbitSpeed: 0,
+          type: 'ribbon'
         });
       }
       
-      // --- PART 2: The Top Glow Sphere (Star Replacement) ---
-      // A tight, bright sphere at the very top
-      const sphereY = -920; 
-      const sphereRadius = 35;
-      const sphereCount = 300;
+      // --- PART 3: The Top Glow Sphere (Star) ---
+      const sphereY = yBase - treeHeight - 20; 
+      const sphereRadius = 50;
+      const sphereCount = 400; // Denser star
 
       for (let i = 0; i < sphereCount; i++) {
-        // Uniform sphere distribution
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
-        const r = Math.pow(Math.random(), 1/3) * sphereRadius; // cubic root for uniform volume
+        const r = Math.pow(Math.random(), 1/3) * sphereRadius;
 
         const x = r * Math.sin(phi) * Math.cos(theta);
         const y = sphereY + r * Math.sin(phi) * Math.sin(theta);
@@ -96,27 +160,14 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
 
         particlesRef.current.push({
           x, y, z, baseX: x, baseY: y, baseZ: z,
-          // Pure white and bright yellow for intense glow
-          color: Math.random() > 0.3 ? '#FFFFFF' : '#FFFACD', 
-          size: Math.random() * 4 + 2, // Larger particles
+          color: '#FFFFFF', 
+          size: Math.random() * 4 + 2,
           randomOffset: 0, 
-          sparkleSpeed: 0.05 + Math.random() * 0.1, // Fast sparkle
+          sparkleSpeed: 0.1,
           sparklePhase: Math.random() * Math.PI * 2, 
-          orbitSpeed: 0
+          orbitSpeed: 0,
+          type: 'star'
         });
-      }
-      
-      // Add a few "rays" emitting from center
-      for(let i = 0; i < 20; i++) {
-         particlesRef.current.push({
-            x: 0, y: sphereY, z: 0, baseX: 0, baseY: sphereY, baseZ: 0,
-            color: '#FFFFFF',
-            size: 15 + Math.random() * 10, // Big glow flares
-            randomOffset: 0,
-            sparkleSpeed: 0.02,
-            sparklePhase: Math.random(),
-            orbitSpeed: 0
-         });
       }
     }
 
@@ -124,6 +175,7 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
       if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
+      // 'lighter' gives that glowing, additive blending look crucial for "magic"
       ctx.globalCompositeOperation = 'lighter';
       
       const cx = canvas.width / 2;
@@ -133,7 +185,8 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
 
       rotationRef.current += 0.003;
 
-      particlesRef.current.sort((a, b) => b.z - a.z);
+      // Z-sorting for correct depth occlusion (though 'lighter' mitigates need, it helps structure)
+      // particlesRef.current.sort((a, b) => b.z - a.z); 
 
       particlesRef.current.forEach(p => {
         let targetX, targetY, targetZ;
@@ -142,19 +195,30 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
           // Explosion logic
           const explodeFactor = 5; 
           const time = Date.now() * 0.0005;
-          targetX = p.baseX * explodeFactor + Math.sin(time + p.randomOffset) * 200;
-          targetY = p.baseY * explodeFactor + Math.cos(time + p.randomOffset) * 200;
-          targetZ = p.baseZ * explodeFactor;
+          
+          if (p.type === 'ribbon') {
+             // Ribbon unravels gracefully
+             targetX = p.baseX * explodeFactor * 1.5 + Math.cos(time * 2 + p.baseY * 0.01) * 300;
+             targetY = p.baseY * explodeFactor;
+             targetZ = p.baseZ * explodeFactor * 1.5 + Math.sin(time * 2 + p.baseY * 0.01) * 300;
+          } else {
+             // Tree explodes outward
+             targetX = p.baseX * explodeFactor + Math.sin(time + p.randomOffset) * 200;
+             targetY = p.baseY * explodeFactor + Math.cos(time + p.randomOffset) * 200;
+             targetZ = p.baseZ * explodeFactor;
+          }
         } else {
           targetX = p.baseX;
           targetY = p.baseY;
           targetZ = p.baseZ;
         }
 
+        // Smooth interpolation
         p.x += (targetX - p.x) * 0.06;
         p.y += (targetY - p.y) * 0.06;
         p.z += (targetZ - p.z) * 0.06;
 
+        // 3D Rotation
         const cos = Math.cos(rotationRef.current);
         const sin = Math.sin(rotationRef.current);
         
@@ -162,16 +226,26 @@ const ChristmasTree: React.FC<ChristmasTreeProps> = ({ isOpen, onToggle }) => {
         const rz = p.x * sin + p.z * cos;
         const ry = p.y; 
 
+        // Projection
         const scale = fov / (fov + rz + 200); 
-        
         const x2d = rx * scale + cx;
-        const y2d = ry * scale + cy + 100; 
+        const y2d = ry * scale + cy + 100;
 
+        // Sparkle / Alpha Calculation
         const pulse = Math.sin(Date.now() * p.sparkleSpeed + p.sparklePhase);
-        // Base alpha 0.8 for brighter tree
-        const alpha = Math.min(1, scale * (0.8 + pulse * 0.2));
         
-        if (scale > 0) {
+        let alpha = 1;
+        if (p.type === 'ribbon') {
+            // Ribbons shimmer intensely
+            alpha = Math.min(1, scale * (0.7 + pulse * 0.3)); 
+        } else if (p.type === 'ornament') {
+            alpha = Math.min(1, scale * (0.8 + pulse * 0.5)); 
+        } else {
+            // Tree base is more solid
+            alpha = Math.min(1, scale * (0.7 + pulse * 0.1)); 
+        }
+        
+        if (scale > 0 && rz > -fov) {
             ctx.fillStyle = p.color;
             ctx.globalAlpha = alpha;
             ctx.beginPath();

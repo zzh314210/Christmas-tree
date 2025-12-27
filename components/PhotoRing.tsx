@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Photo } from '../types';
 
@@ -7,13 +8,31 @@ interface PhotoRingProps {
 }
 
 const PhotoRing: React.FC<PhotoRingProps> = ({ photos, isVisible }) => {
-  const [radius, setRadius] = useState(300);
+  const [radius, setRadius] = useState(350); 
 
   useEffect(() => {
     const handleResize = () => {
-      setRadius(window.innerWidth < 768 ? 130 : 300);
+      const width = window.innerWidth;
+      
+      if (width < 768) {
+        // Mobile: 
+        // Card Width: 128px (w-32)
+        // Radius: 145px (Increased from 110px)
+        // Logic: Radius (145) > Card Width (128), creating natural gaps between photos.
+        // Total Width: ~336px, fits safely within 360px screens without overflow.
+        setRadius(145);
+      } else if (width < 1024) {
+        // Tablet: Radius 200px fits well with w-40 (160px)
+        setRadius(200);
+      } else {
+        // Desktop: Original grand scale
+        setRadius(350);
+      }
     };
+
+    // Initial calculation
     handleResize();
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -28,10 +47,13 @@ const PhotoRing: React.FC<PhotoRingProps> = ({ photos, isVisible }) => {
           return (
             <div
               key={photo.id}
-              className="absolute w-32 h-44 md:w-56 md:h-72 bg-black/40 p-1 rounded-xl border border-yellow-500/50 shadow-[0_0_25px_rgba(255,215,0,0.15)] overflow-hidden backdrop-blur-sm transition-all duration-1000 hover:scale-110 pointer-events-auto hover:border-yellow-400 hover:shadow-[0_0_35px_rgba(255,215,0,0.4)]"
+              // Responsive Sizing (Kept exactly as requested):
+              // Mobile: w-32 h-44
+              // Tablet: w-40 h-56
+              // Desktop: w-56 h-72
+              className="absolute w-32 h-44 md:w-40 md:h-56 lg:w-56 lg:h-72 bg-black/40 p-1 rounded-xl border border-yellow-500/50 shadow-[0_0_25px_rgba(255,215,0,0.15)] overflow-hidden backdrop-blur-sm transition-all duration-1000 hover:scale-110 pointer-events-auto hover:border-yellow-400 hover:shadow-[0_0_35px_rgba(255,215,0,0.4)]"
               style={{
                 transform: `rotateY(${angle}deg) translateZ(${radius}px)`,
-                // Removed backfaceVisibility: 'hidden' to prevent cards from disappearing when rotating away
               }}
             >
               <div className="w-full h-full relative">

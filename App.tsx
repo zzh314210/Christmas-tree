@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+
+// Add React import to resolve namespace errors for React.FC and React.ChangeEvent
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ChristmasTree from './components/ChristmasTree';
 import PhotoRing from './components/PhotoRing';
 import HandGestureOverlay from './components/HandGestureOverlay';
@@ -6,20 +8,15 @@ import StarField from './components/StarField';
 import { Photo, GestureType } from './types';
 import { generateGreeting } from './services/geminiService';
 
-// 使用纯相对路径，浏览器会基于当前的 /christmas/ 路径自动解析为 /christmas/assets/1.jpg
+// Updated paths to work with base URL '/christmas/'
+// Files should be in public/assets/
 const DEFAULT_PHOTOS: Photo[] = [
-  { 
-    id: '1', 
-    url: 'assets/1.jpg'
-  }, 
-  { 
-    id: '2', 
-    url: 'assets/2.jpg'
-  }, 
-  { 
-    id: '3', 
-    url: 'assets/3.jpg'
-  }, 
+  { id: '1', url: '/christmas/assets/1.jpg' }, 
+  { id: '2', url: '/christmas/assets/2.jpg' }, 
+  { id: '3', url: '/christmas/assets/3.jpg' }, 
+  { id: '4', url: '/christmas/assets/4.jpg' }, 
+  { id: '5', url: '/christmas/assets/5.jpg' }, 
+  { id: '6', url: '/christmas/assets/6.jpg' }, 
 ];
 
 const App: React.FC = () => {
@@ -76,30 +73,50 @@ const App: React.FC = () => {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
-    const newPhotos: Photo[] = [];
-    const filesArray = Array.from(files).slice(0, 3) as File[];
+    
+    const processFiles = async () => {
+        try {
+            const newPhotos: Photo[] = [];
+            // 允许用户上传最多 6 张
+            const filesArray = Array.from(files).slice(0, 6) as File[];
+            
+            const promises = filesArray.map((file, index) => {
+                return new Promise<void>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        if (event.target?.result) {
+                            newPhotos.push({
+                                id: `upload-${Date.now()}-${index}`,
+                                url: event.target.result as string,
+                            });
+                        }
+                        resolve();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
 
-    let loadedCount = 0;
-    filesArray.forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          newPhotos.push({
-            id: `upload-${Date.now()}-${index}`,
-            url: event.target.result as string,
-          });
+            await Promise.all(promises);
+            
+            if (newPhotos.length > 0) {
+                 setPhotos(prev => {
+                    // 组合新上传的和默认的照片，始终保持 6 张
+                    const combined = [...newPhotos, ...DEFAULT_PHOTOS];
+                    return combined.slice(0, 6);
+                 });
+            }
+        } catch (error) {
+            console.error("Upload failed", error);
+        } finally {
+            setIsUploading(false);
+            e.target.value = '';
         }
-        loadedCount++;
-        if (loadedCount === filesArray.length) {
-          setPhotos(newPhotos.length === 3 ? newPhotos : [...newPhotos, ...DEFAULT_PHOTOS.slice(newPhotos.length)]);
-          setIsUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    };
+
+    processFiles();
   };
 
   const baseButtonClass = "flex-1 py-3 rounded-2xl font-bold transition-all shadow-lg border text-xs md:text-sm whitespace-nowrap flex items-center justify-center gap-2 backdrop-blur-md";
@@ -118,16 +135,11 @@ const App: React.FC = () => {
       
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_80%,_#1a2035_0%,_#000000_100%)] z-0" />
 
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-900/20 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-emerald-900/20 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }} />
-      </div>
-
       <StarField isWarping={isOpen} />
 
       <div className="absolute top-4 text-center z-50 pointer-events-none mix-blend-screen opacity-80">
         <h1 className="text-3xl md:text-5xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-200 to-yellow-600 mb-1 drop-shadow-[0_0_25px_rgba(255,215,0,0.5)]">
-          Magical Holiday
+          Merry Christmas
         </h1>
       </div>
 
@@ -151,40 +163,23 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div 
-        className="absolute bottom-8 left-0 w-full flex items-center justify-center px-4 z-50" 
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="absolute bottom-8 left-0 w-full flex items-center justify-center px-4 z-50" onClick={(e) => e.stopPropagation()}>
         <div className="flex w-full max-w-md gap-3">
           <button
             onClick={() => setGestureActive(!gestureActive)}
-            className={`${baseButtonClass} ${
-              gestureActive 
-                ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
-                : 'bg-white/5 text-emerald-200/80 border-white/10 hover:bg-white/10 hover:border-emerald-500/30'
-            }`}
+            className={`${baseButtonClass} ${gestureActive ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400' : 'bg-white/5 text-emerald-200/80 border-white/10'}`}
           >
             <span>{gestureActive ? '✋ On' : '🖐️ Gesture'}</span>
           </button>
 
-          <label className={`${baseButtonClass} cursor-pointer bg-white/5 text-blue-200/80 border-white/10 hover:bg-white/10 hover:border-blue-400/30`}>
-            <span>🖼️ {isUploading ? '...' : 'Photos'}</span>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
+          <label className={`${baseButtonClass} cursor-pointer bg-white/5 text-blue-200/80 border-white/10 hover:border-blue-400/30`}>
+            <span>🖼️ Photos</span>
+            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
           </label>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`${baseButtonClass} ${
-               isOpen
-               ? 'bg-red-500/20 text-red-100 border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.3)]'
-               : 'bg-white/5 text-red-200/80 border-white/10 hover:bg-white/10 hover:border-red-500/30'
-            }`}
+            className={`${baseButtonClass} ${isOpen ? 'bg-red-500/20 text-red-100 border-red-400' : 'bg-white/5 text-red-200/80 border-white/10'}`}
           >
             <span>✨ {isOpen ? 'Reset' : 'Magic'}</span>
           </button>
